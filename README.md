@@ -13,7 +13,7 @@
 I approached it in 3 phases taking ~4hr:
 
 0. HTTP server, metrics daemon (no real stats yet) (~1hr)
-0. Find & utilize a stats library (github.com/shirou/gopsutil) (~1.5hr)
+0. Find & utilize a stats library [github.com/shirou/gopsutil](https://github.com/shirou/gopsutil) (~1.5hr)
 0. Code refactoring, clean-up & thread-safety (~1.5hr)
 
 # What did you find to be the most difficult?
