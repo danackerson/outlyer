@@ -24,8 +24,7 @@ func main() {
 }
 
 func startMetricsDaemon() {
-	commands.StoreMetrics() // initialize the metrics storage registry
-	gocron.Every(1).Seconds().Do(commands.StoreMetrics)
+	gocron.Every(1).Seconds().Do(commands.StoreMetricMeasurement)
 	<-gocron.Start()
 }
 
@@ -35,22 +34,20 @@ func startAPIServer() {
 	n := negroni.Classic()
 
 	n.UseHandler(r)
-	log.Printf("SERVING HTTP...")
+	log.Printf("SERVING HTTP at http://localhost:%s/metrics", getHTTPPort())
 	http.ListenAndServe(httpPort, n)
 }
 
 func setUpRoutes(router *mux.Router) {
 	router.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
-		getMetrics(w, r)
+		getAllMetrics(w, r)
 	})
 }
 
-func getMetrics(w http.ResponseWriter, req *http.Request) {
-	lastBaseMetricSample := commands.GetLastMetricSample()
-
-	data, err := json.Marshal(lastBaseMetricSample)
+func getAllMetrics(w http.ResponseWriter, req *http.Request) {
+	data, err := json.Marshal(commands.GetAllMetrics())
 	if err != nil {
-		errText := fmt.Sprintf("ERR: unable to marshal JSON baseMetrics object: %s", err.Error())
+		errText := fmt.Sprintf("ERR: unable to marshal all JSON metrics object: %s", err.Error())
 		http.Error(w,
 			errText,
 			http.StatusInternalServerError)

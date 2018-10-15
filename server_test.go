@@ -2,43 +2,71 @@ package main
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/danackerson/outlyer/commands"
 	"github.com/danackerson/outlyer/structures"
 )
 
-/*"sys.cpu": "4.15",
-"sys.mem.active": "8029741056",
-"sys.mem.available": "6602049536",
-"sys.disk.free": "13605457920",
-"sys.disk.used": "76558884181",
-"sys.net.rx": "217003.31",
-"sys.net.tx": "11390.29"*/
-
-func Test_baseMetrics(t *testing.T) {
+func Test_manyMetrics(t *testing.T) {
 	t.Parallel()
 
-	// redirect case
-	req, err := http.NewRequest("GET", "http://localhost"+getHTTPPort()+"/metrics", nil)
+	req, err := http.NewRequest("GET", "http://localhost"+
+		getHTTPPort()+"/metrics", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	commands.StoreMetrics()
+	go startMetricsDaemon()
+	sleeping := time.Duration(10)
+	time.Sleep(sleeping * time.Second) // let the system collect some metrics
 
 	res := httptest.NewRecorder()
-	getMetrics(res, req)
+	getAllMetrics(res, req)
 
-	var target structures.BaseMetrics
-	json.NewDecoder(res.Body).Decode(&target)
-	if target.Sys.CPU == 0 {
-		log.Printf("CPU: %v", target.Sys.CPU)
-		t.Fatalf("expected non-zero CPU load report; %f", target.Sys.CPU)
+	var allMetrics []structures.MetricsRegistry
+	json.NewDecoder(res.Body).Decode(&allMetrics)
+
+	if len(allMetrics) < 5 {
+		t.Errorf("Only %d metrics stored after %d secs",
+			len(allMetrics), sleeping)
 	}
-	// TODO: test for valid JSON
-	// TODO: test matching values in test
+}
+
+func Test_oneMetric(t *testing.T) {
+	t.Parallel()
+
+	req, err := http.NewRequest("GET", "http://localhost"+
+		getHTTPPort()+"/metrics", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	commands.StoreMetricMeasurement()
+
+	res := httptest.NewRecorder()
+	getAllMetrics(res, req)
+
+	var allMetrics []structures.MetricsRegistry
+	json.NewDecoder(res.Body).Decode(&allMetrics)
+
+	nowNano := time.Now().UnixNano()
+
+	firstMetric := allMetrics[0]
+	if firstMetric.UnixTimeNano >= nowNano {
+		t.Errorf("expected recorded time %d before now (%d)",
+			firstMetric.UnixTimeNano, nowNano)
+	}
+	if firstMetric.Measurement.Sys.Mem.BytesActive == 0 {
+		t.Errorf("expected non-zero Memory report")
+	}
+	if firstMetric.Measurement.Sys.Disk.BytesUsed == 0 {
+		t.Errorf("expected non-zero Disk report")
+	}
+	if firstMetric.Measurement.Sys.Net.BytesTransmitted == 0 {
+		t.Errorf("expected non-zero Net report")
+	}
 }
