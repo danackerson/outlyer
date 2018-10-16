@@ -39,15 +39,17 @@ func startAPIServer() {
 }
 
 func setUpRoutes(router *mux.Router) {
-	router.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
-		getAllMetrics(w, r)
-	})
+	router.HandleFunc("/metrics",
+		func(w http.ResponseWriter, r *http.Request) {
+			getAllMetrics(w, r)
+		})
 }
 
 func getAllMetrics(w http.ResponseWriter, req *http.Request) {
 	data, err := json.Marshal(commands.GetAllMetrics())
 	if err != nil {
-		errText := fmt.Sprintf("ERR: unable to marshal all JSON metrics object: %s", err.Error())
+		errText := fmt.Sprintf(
+			"ERR: unable to marshal all JSON metrics object: %s", err.Error())
 		http.Error(w,
 			errText,
 			http.StatusInternalServerError)

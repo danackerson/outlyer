@@ -5,12 +5,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/danackerson/outlyer/structures"
+	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/disk"
 	"github.com/shirou/gopsutil/mem"
 	"github.com/shirou/gopsutil/net"
-
-	"github.com/danackerson/outlyer/structures"
-	"github.com/shirou/gopsutil/cpu"
 )
 
 var registryStore = []structures.MetricsRegistry{}
@@ -47,7 +46,8 @@ func StoreMetricMeasurement() {
 	// Populate your custom metric here e.g.
 	// getNginxStats(systemSnap)
 
-	nextMeasurement := structures.MetricsRegistry{UnixTimeNano: time.Now().UnixNano(), Measurement: *systemSnap}
+	nextMeasurement := structures.MetricsRegistry{
+		UnixTimeNano: time.Now().UnixNano(), Measurement: *systemSnap}
 
 	// protect against dirty writes/reads
 	registryMutex.Lock()
@@ -66,7 +66,8 @@ func getCPULoad(cpuPercentages []float64, measurement *structures.Metrics) {
 	measurement.Sys.CPU = totalCPU / float64(len(cpuPercentages))
 }
 
-func getMemory(virtualMemory *mem.VirtualMemoryStat, measurement *structures.Metrics) {
+func getMemory(virtualMemory *mem.VirtualMemoryStat,
+	measurement *structures.Metrics) {
 	measurement.Sys.Mem.BytesActive = virtualMemory.Used
 	measurement.Sys.Mem.BytesAvailable = virtualMemory.Available
 }
