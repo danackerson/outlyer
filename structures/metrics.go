@@ -3,7 +3,10 @@ package structures
 // Metrics for system reporting
 type Metrics struct {
 	Sys struct {
-		CPU float64 `json:"cpu"`
+		CPU struct {
+			AvgPercent float64 `json:"avgcpu"`
+			Load1      float64 `json:"load1"`
+		}
 		Mem struct {
 			BytesActive    uint64 `json:"active"`
 			BytesAvailable uint64 `json:"available"`

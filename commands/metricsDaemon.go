@@ -5,6 +5,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/shirou/gopsutil/load"
+
 	"github.com/danackerson/outlyer/structures"
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/disk"
@@ -23,7 +25,13 @@ func StoreMetricMeasurement() {
 	if err != nil || len(cpuPercentages) == 0 {
 		log.Printf("CPU measurement failed: %s\n", err.Error())
 	}
-	getCPULoad(cpuPercentages, systemSnap)
+	getAvgCPU(cpuPercentages, systemSnap)
+
+	avgStat, err := load.Avg()
+	if err != nil {
+		log.Printf("failed to measure CPU.Load1: %s", err.Error())
+	}
+	getCPULoad(*avgStat, systemSnap)
 
 	virtualMemory, err := mem.VirtualMemory()
 	if err != nil || virtualMemory.Active == 0 {
@@ -42,7 +50,6 @@ func StoreMetricMeasurement() {
 		log.Printf("Network measurement failed: %s\n", err.Error())
 	}
 	getNetwork(net[0], systemSnap)
-
 	// Populate your custom metric here e.g.
 	// getNginxStats(systemSnap)
 
@@ -57,13 +64,17 @@ func StoreMetricMeasurement() {
 	//log.Printf("Reg: %v\n", registryStore[len(registryStore)-1])
 }
 
-func getCPULoad(cpuPercentages []float64, measurement *structures.Metrics) {
+func getCPULoad(cpuAvgStats load.AvgStat, measurement *structures.Metrics) {
+	measurement.Sys.CPU.Load1 = cpuAvgStats.Load1
+}
+
+func getAvgCPU(cpuPercentages []float64, measurement *structures.Metrics) {
 	totalCPU := 0.0
 	for _, cpuPercent := range cpuPercentages {
 		totalCPU += cpuPercent / 100.0
 	}
 
-	measurement.Sys.CPU = totalCPU / float64(len(cpuPercentages))
+	measurement.Sys.CPU.AvgPercent = totalCPU / float64(len(cpuPercentages))
 }
 
 func getMemory(virtualMemory *mem.VirtualMemoryStat,

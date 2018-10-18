@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -10,6 +11,10 @@ import (
 	"github.com/danackerson/outlyer/commands"
 	"github.com/danackerson/outlyer/structures"
 )
+
+func init() {
+	fmt.Println("Testing a 5s metrics collection run ... please stand by!")
+}
 
 func Test_manyMetrics(t *testing.T) {
 	t.Parallel()
@@ -21,7 +26,8 @@ func Test_manyMetrics(t *testing.T) {
 	}
 
 	go startMetricsDaemon()
-	sleeping := time.Duration(10)
+
+	sleeping := time.Duration(5)
 	time.Sleep(sleeping * time.Second) // let the system collect some metrics
 
 	res := httptest.NewRecorder()
@@ -30,7 +36,7 @@ func Test_manyMetrics(t *testing.T) {
 	var allMetrics []structures.MetricsRegistry
 	json.NewDecoder(res.Body).Decode(&allMetrics)
 
-	if len(allMetrics) < 5 {
+	if len(allMetrics) < 2 {
 		t.Errorf("Only %d metrics stored after %d secs",
 			len(allMetrics), sleeping)
 	}

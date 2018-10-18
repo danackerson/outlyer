@@ -9,7 +9,7 @@ import (
 func Test_metricStructure(t *testing.T) {
 	t.Parallel()
 
-	const jsonMeasurement = `{"sys":{"cpu":0.02985074626882049,
+	const jsonMeasurement = `{"sys":{"cpu":{"avgcpu":0.02985074626882049, "load1":0.09},
 		"mem":{"active":1045004288,"available":10264137728},
 		"disk":{"free":414975938560,"used":2934190080},
 		"net":{"tx":996775,"rx":3762064}}
@@ -19,8 +19,12 @@ func Test_metricStructure(t *testing.T) {
 	json.NewDecoder(strings.NewReader(jsonMeasurement)).Decode(&target)
 
 	expectedCPU := 0.02985074626882049
-	if target.Sys.CPU != expectedCPU {
-		t.Errorf("CPU act %f != exp %f", target.Sys.CPU, expectedCPU)
+	if target.Sys.CPU.AvgPercent != expectedCPU {
+		t.Errorf("CPU%% act %f != exp %f", target.Sys.CPU.AvgPercent, expectedCPU)
+	}
+	expectedLoad1 := 0.09
+	if target.Sys.CPU.Load1 != expectedLoad1 {
+		t.Errorf("Load1 act %f != exp %f", target.Sys.CPU.Load1, expectedLoad1)
 	}
 	expectedMemActive := uint64(1045004288)
 	if target.Sys.Mem.BytesActive != expectedMemActive {

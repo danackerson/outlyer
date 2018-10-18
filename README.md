@@ -4,7 +4,7 @@
 0. go get -v ./...
 
 # Test, Build and Run
-0. go test ./...
+0. go test -v ./... (PATIENCE: there is a 10s test which verifies registry population!)
 0. go build server.go
 0. ./server
 0. curl http://localhost:8080/metrics
